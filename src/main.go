@@ -1,12 +1,17 @@
 package main
 
 import (
-	"fmt"
-	//"github.com/dgrijalva/jwt-go"
 	"encoding/json"
+	"fmt"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"log"
 	"net/http"
+	"time"
 )
+
+var db gorm.DB
 
 var users = map[string]string{
 	"user1": "password1",
@@ -20,14 +25,17 @@ type Credentials struct {
 	Password string `json:"password"`
 }
 
-type JWT struct {
-	Username string `json:"token"`
+type Claims struct {
+	Username string `json:"username"`
 	jwt.StandardClaims
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
+type TokenJson struct {
+	Token string `json:"token"`
+}
+
+func createToken(w http.ResponseWriter, r *http.Request) {
 	creds := Credentials{}
-	fmt.Printf("\033[36;1m%s, %s", creds.Username, creds.Password)
 
 	err := json.NewDecoder(r.Body).Decode(&creds)
 	if err != nil {
@@ -35,17 +43,67 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	password, found := users[creds.Username]
-	if !found || password != creds.Password {
+	member := Member{}
+
+	var membersCount int
+	db.Where(
+		"username = ? AND password = ?",
+		creds.Username,
+		creds.Password,
+	).Find(&member).Count(&membersCount)
+	if membersCount == 0 {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
+	expiredAt := time.Now().Add((time.Hour * 24) * 7)
+	claims := &Claims{
+		Username:       creds.Username,
+		StandardClaims: jwt.StandardClaims{},
+	}
+
+	token := jwt.Token{
+		Header: map[string]interface{}{
+			"alg": jwt.SigningMethodHS256.Alg(),
+			"exp": expiredAt.Unix(),
+		},
+		Claims: claims,
+		Method: jwt.SigningMethodHS256,
+	}
+	tokenstring, err := token.SignedString(key)
+	response, _ := json.MarshalIndent(
+		&TokenJson{Token: tokenstring},
+		"",
+		"  ",
+	)
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
+func setup() gorm.DB {
+	db, err := gorm.Open(
+		"sqlite3",
+		"gomonitor.db",
+	)
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+		panic("Failed to connect to postgres DB")
+	}
+	db.AutoMigrate(&Member{})
+
+	return *db
+}
+
+func teardown(db gorm.DB) {
+	db.Close()
 }
 
 func main() {
+	db = setup()
+	defer teardown(db)
+
 	fmt.Println("\033[92mServing on localhost:8090")
-	http.HandleFunc("/login", Login)
+	http.HandleFunc("/apiv1/tokens", createToken)
 	log.Fatal(http.ListenAndServe(":8090", nil))
 }

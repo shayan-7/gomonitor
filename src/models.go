@@ -5,8 +5,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
-type Url struct {
+type Member struct {
 	gorm.Model
-	Address string
-	Hash    string
+	Username string
+	Password string
 }

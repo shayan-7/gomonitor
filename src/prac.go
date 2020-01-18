@@ -3,25 +3,13 @@ package main
 import (
 	//"encoding/json"
 	"fmt"
-	"reflect"
+	//"reflect"
+	//"time"
 )
 
-type Animal struct {
-	Name  string
-	Order string
-}
-
-//func (a *Animal) fill(data map[string]interface{}) {
-//	t := reflect.ValueOf(result).Elem()
-//}
-
 func main() {
-	ex := map[string]int{"a": 1, "b": 2}
-	j, k := ex["b"]
-	fmt.Println(j, k)
-	a := &Animal{}
-	structValue := reflect.ValueOf(a).Elem()
-	//structFieldValue := structValue.FieldByName("Name")
-	fmt.Printf("%+v\n", structValue)
-	fmt.Printf("%+v\n", reflect.TypeOf(structValue))
+	a := map[string]interface{}{"S": 1, "H": "A"}
+	fmt.Printf("%+v\n", a)
+	//fmt.Printf("\033[96m  \r%+v\n", now.Unix())
+	//fmt.Printf("\033[96m  \r%+v\n", reflect.TypeOf(now.Unix()))
 }
