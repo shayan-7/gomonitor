@@ -34,6 +34,39 @@ type TokenJson struct {
 	Token string `json:"token"`
 }
 
+func registerMember(w http.ResponseWriter, r *http.Request) {
+	creds := Credentials{}
+	err := json.NewDecoder(r.Body).Decode(&creds)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	member := Member{}
+	var membersCount int
+	db.Where(
+		"username = ?",
+		creds.Username,
+	).Find(&member).Count(&membersCount)
+
+	if membersCount > 0 {
+		w.WriteHeader(http.StatusConflict)
+		return
+	}
+
+	member.Username = creds.Username
+	member.Password = creds.Password
+	db.Create(&member)
+	response, _ := json.MarshalIndent(
+		member,
+		"",
+		"  ",
+	)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
 func createToken(w http.ResponseWriter, r *http.Request) {
 	creds := Credentials{}
 
@@ -105,5 +138,6 @@ func main() {
 
 	fmt.Println("\033[92mServing on localhost:8090")
 	http.HandleFunc("/apiv1/tokens", createToken)
+	http.HandleFunc("/apiv1/members", registerMember)
 	log.Fatal(http.ListenAndServe(":8090", nil))
 }

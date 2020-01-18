@@ -8,5 +8,5 @@ import (
 type Member struct {
 	gorm.Model
 	Username string
-	Password string
+	Password string `json:"-"`
 }
