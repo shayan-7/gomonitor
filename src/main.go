@@ -64,6 +64,6 @@ func main() {
 	fmt.Println("\033[92mServing on localhost:8090")
 	http.HandleFunc("/apiv1/tokens", createToken)
 	http.HandleFunc("/apiv1/members", registerMember)
-	http.HandleFunc("/apiv1/urls", createURL)
+	http.HandleFunc("/apiv1/urls", getURL)
 	log.Fatal(http.ListenAndServe(":8090", nil))
 }

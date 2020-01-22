@@ -9,6 +9,26 @@ import (
 	"time"
 )
 
+func getURL(w http.ResponseWriter, r *http.Request) {
+	isValid := isValidRequest(r)
+	if !isValid {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+
+	}
+
+	urls := []URL{}
+	db.Find(&urls)
+	response, _ := json.MarshalIndent(
+		&urls,
+		"",
+		"  ",
+	)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
 func isValidRequest(r *http.Request) bool {
 	tokenString := r.Header.Get("Authorization")
 	if tokenString == "" {
