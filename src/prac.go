@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	a := map[string]interface{}{"S": 1, "H": "A"}
-	fmt.Printf("%+v\n", a)
-	//fmt.Printf("\033[96m  \r%+v\n", now.Unix())
-	//fmt.Printf("\033[96m  \r%+v\n", reflect.TypeOf(now.Unix()))
+	a := "Salam"
+	b := "Shayan"
+	c := fmt.Sprintf("%s, %s", a, b)
+	fmt.Println(c)
 }

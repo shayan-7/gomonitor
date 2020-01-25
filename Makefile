@@ -4,7 +4,7 @@ main:
 	@go build -o bin/$@ src/main.go src/models.go src/handlers.go src/consts.go
 
 prac:
-	@go build -o bin/$@ src/prac.go
+	@go build -o bin/$@ src/prac.go src/models.go
 
 clean:
 	@rm bin/*

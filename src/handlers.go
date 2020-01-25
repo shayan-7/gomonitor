@@ -4,10 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"net/http"
 	"time"
 )
+
+func handleURL(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
+		createURL(w, r)
+	case "GET":
+		getURL(w, r)
+	}
+}
 
 func getURL(w http.ResponseWriter, r *http.Request) {
 	isValid := isValidRequest(r)
@@ -44,6 +52,7 @@ func isValidRequest(r *http.Request) bool {
 			return key, nil
 		},
 	)
+
 	if err != nil || err == jwt.ErrSignatureInvalid || !token.Valid {
 		return false
 	}
@@ -56,7 +65,6 @@ func createURL(w http.ResponseWriter, r *http.Request) {
 	if !isValid {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
-
 	}
 
 	urlcreds := URLCredentials{}

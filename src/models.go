@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"time"
 )
 
@@ -20,4 +20,6 @@ type URL struct {
 	Failure   int       `json:"failure"`
 	Success   int       `json:"success"`
 	Threshold int       `json:"threshold"`
+	Member    Member    `gorm:"foreignkey:MemberID" json:"-"`
+	MemberID  uint      `json:"memberId`
 }

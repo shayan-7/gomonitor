@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"log"
 	"net/http"
 )
@@ -40,14 +40,28 @@ type TokenJson struct {
 
 func setup() gorm.DB {
 	db, err := gorm.Open(
-		"sqlite3",
-		"gomonitor.db",
+		"postgres",
+		"host=localhost user=postgres dbname=postgres password=postgres",
 	)
+
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		panic("Failed to connect to postgres DB")
 	}
+	var dbExists bool
+	db.
+		Raw("select exists(select * from pg_database where datname = 'gomono');").
+		Row().
+		Scan(&dbExists)
 
+	if !dbExists {
+		db.Exec("CREATE DATABASE gomono;")
+	}
+	db.Close()
+	db, err = gorm.Open(
+		"postgres",
+		"host=localhost user=postgres dbname=gomono password=postgres",
+	)
 	db.AutoMigrate(&Member{})
 	db.AutoMigrate(&URL{})
 	return *db
@@ -64,6 +78,6 @@ func main() {
 	fmt.Println("\033[92mServing on localhost:8090")
 	http.HandleFunc("/apiv1/tokens", createToken)
 	http.HandleFunc("/apiv1/members", registerMember)
-	http.HandleFunc("/apiv1/urls", getURL)
+	http.HandleFunc("/apiv1/urls", handleURL)
 	log.Fatal(http.ListenAndServe(":8090", nil))
 }
