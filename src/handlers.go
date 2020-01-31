@@ -17,16 +17,15 @@ func handleURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getURL(w http.ResponseWriter, r *http.Request) {
-	isValid := isValidRequest(r)
-	if !isValid {
+func getAlert(w http.ResponseWriter, r *http.Request) {
+	claims := claimsFromRequest(r)
+	if claims == nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
-
 	}
 
 	urls := []URL{}
-	db.Find(&urls)
+	db.Where("threshold < failure").Find(&urls)
 	response, _ := json.MarshalIndent(
 		&urls,
 		"",
@@ -37,14 +36,32 @@ func getURL(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-func isValidRequest(r *http.Request) bool {
+func getURL(w http.ResponseWriter, r *http.Request) {
+	claims := claimsFromRequest(r)
+	if claims == nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	urls := []URL{}
+	db.Where("member_id = ?", claims.ID).Find(&urls)
+	response, _ := json.MarshalIndent(
+		&urls,
+		"",
+		"  ",
+	)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
+func claimsFromRequest(r *http.Request) *Claims {
 	tokenString := r.Header.Get("Authorization")
 	if tokenString == "" {
-		return false
+		return nil
 	}
 
 	claims := &Claims{}
-
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		claims,
@@ -54,15 +71,15 @@ func isValidRequest(r *http.Request) bool {
 	)
 
 	if err != nil || err == jwt.ErrSignatureInvalid || !token.Valid {
-		return false
+		return nil
 	}
 
-	return true
+	return claims
 }
 
 func createURL(w http.ResponseWriter, r *http.Request) {
-	isValid := isValidRequest(r)
-	if !isValid {
+	claims := claimsFromRequest(r)
+	if claims == nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -75,7 +92,11 @@ func createURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := URL{Address: urlcreds.Address, Threshold: urlcreds.Threshold}
+	url := URL{
+		Address:   urlcreds.Address,
+		Threshold: urlcreds.Threshold,
+		MemberID:  claims.ID,
+	}
 	db.Create(&url)
 	response, _ := json.MarshalIndent(
 		&url,
@@ -144,8 +165,6 @@ func createToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(creds)
-
 	member := Member{}
 	var membersCount int
 	db.Where(
@@ -160,7 +179,8 @@ func createToken(w http.ResponseWriter, r *http.Request) {
 
 	expiredAt := time.Now().Add((time.Hour * 24) * 7)
 	claims := &Claims{
-		Username:       creds.Username,
+		ID:             member.ID,
+		Username:       member.Username,
 		StandardClaims: jwt.StandardClaims{},
 	}
 

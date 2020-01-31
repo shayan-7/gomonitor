@@ -49,10 +49,9 @@ func setup() gorm.DB {
 		panic("Failed to connect to postgres DB")
 	}
 	var dbExists bool
-	db.
-		Raw("select exists(select * from pg_database where datname = 'gomono');").
-		Row().
-		Scan(&dbExists)
+	db.Raw(
+		"SELECT EXISTS(SELECT * FROM pg_database WHERE datname = 'gomono');",
+	).Row().Scan(&dbExists)
 
 	if !dbExists {
 		db.Exec("CREATE DATABASE gomono;")
@@ -79,5 +78,6 @@ func main() {
 	http.HandleFunc("/apiv1/tokens", createToken)
 	http.HandleFunc("/apiv1/members", registerMember)
 	http.HandleFunc("/apiv1/urls", handleURL)
+	http.HandleFunc("/apiv1/alerts", getAlert)
 	log.Fatal(http.ListenAndServe(":8090", nil))
 }
