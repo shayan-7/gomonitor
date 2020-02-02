@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"net/http"
+	"regexp"
 	"time"
 )
 
@@ -91,11 +92,17 @@ func createURL(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	match, _ := regexp.MatchString(URLPATTERN, urlcreds.Address)
+	if !match {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	url := URL{
 		Address:   urlcreds.Address,
 		Threshold: urlcreds.Threshold,
 		MemberID:  claims.ID,
+		Available: true,
 	}
 	db.Create(&url)
 	response, _ := json.MarshalIndent(

@@ -22,4 +22,5 @@ type URL struct {
 	Threshold int       `json:"threshold"`
 	Member    Member    `gorm:"foreignkey:MemberID" json:"-"`
 	MemberID  uint      `json:"memberId`
+	Available bool      `json:"available"`
 }
